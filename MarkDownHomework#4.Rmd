@@ -1,0 +1,176 @@
+---
+title: 'Homework #4'
+author: "STA 301"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+```{r include = FALSE}
+
+#Libraries
+library(tidyverse)
+library(mosaic)
+library(moderndive)
+library(effectsize)
+library(modelr)
+
+#Dataframe Declaration
+groceries <- read_csv("groceries.csv")
+ercot <- read_csv("ercot.csv")
+redline <- read_csv("redline.csv") 
+
+##include FALSE means neither code or output will show
+##Echo FALSE means code will not show but output will
+```
+
+
+
+# **Question 1: Texas Grocery Prices**
+
+## *Part A*
+
+### Plot 1
+
+```{r echo = FALSE}
+ggplot(groceries) + geom_histogram(aes(x=Price, y = after_stat(density)), color = "light blue", alpha = 0.75, bins = 30, fill = "light blue") +
+  facet_wrap(~Type) +
+  labs(title = "The Distribution of Product Price Density Facted by Different Store Types",
+       x = "Price (In US Dollars)") + theme_classic()
+```
+**Caption:** These graphs show the density of distribution of the prices (in US dollars) of different products across 5 different types of stores in the "groceries" data-frame through a density histogram. 
+
+**Takeaway:** We can see that throughout all of the 5 different store types, the distribution of their density of prices in US Dollars is skewed to the right by outlier products that have larger prices compared to the average and median price. We can also see that all of the data across the store types are fairly uni-modal but some stores have a larger modes than others for their price density distribution. 
+
+
+### Plot 2 
+
+```{r echo = FALSE}
+
+groceries1 = groceries %>% group_by(Type) %>%
+  summarize(medianP = median(Price))
+
+ggplot(groceries1) + geom_col(aes(y = medianP, x = Type), fill = "light blue") +
+  labs(title = "Median Price By Store Type", x = "Store Type", y = "Median Price (In Dollars)")  +
+  theme_classic()
+```
+**Caption:** This is a bar plot that organizes the median price in USD for each of the 5 store types
+
+**Takeaway:** We can see that 4 out of the 5 store types have a relativly similar median price but the "Convenience" Store type has the largest median price in USD of its products. 
+
+
+## *Part B*
+
+```{r include = FALSE}
+lm1 = lm(Price ~ Type + Product, data = groceries)
+get_regression_table(lm1, digit = 2) 
+
+```
+
+
+i) Both the Grocery Type and the Small Format Type stores have statistically significant prices on average compared to baseline of the Convenience Stores because the confidence interval of their coefficients do not include 0 unlike the other types. 
+
+ii) With all other variables held constant and only comparing Grocery and non-Grocery Type, there is an estimated 0.66 dollar decrease in price with Grocery Type store compared to Convenience Type store with a 95 percent confidence interval from -0.92 to -0.41. This means that, compared to Convenience Type, Grocery Type will see a max decrease of 0.92 dollars and a min decrease of 0.41 dollars. 
+
+iii) With all other variables held constant and only comparing Small Format and non-Small Format Type, there is an estimated 0.44 dollar decrease in price with Small Format Type store compared to Convenience Type store with a 95 percent confidence interval from -0.75 to -0.14. This means that, compared to Convenience Type, Small Format Type will see a max decrease of 0.75 dollars and a min decrease of 0.14 dollars. 
+
+
+## *Part C*
+
+```{r include = FALSE}
+
+groceries2 = groceries %>% mutate(Income10k = Income/10000)
+lm2 = lm(Price ~ Income10k + Product, data = groceries2)
+get_regression_table(lm2) 
+
+```
+
+
+i) Consumers in poorer ZIP codes seem to pay more for the same product on average because the get_regression_table() for Income10K shows a decrease in product price (by approximately 0.01 dollars) while the Income10K increases which implies richer people in richer ZIPs pay less (by approximately 0.01 dollars) than people in poorer ZIPs for the same product. 
+
+ii) When we are considering the range of plausible values for how much more or less we can expect to pay with an increase of 10k dollars in income we are 95% confident could pay 0.03 dollars less (-0.03) for each increase in income of 10k in store ZIP code, or we could see difference of 0.1 dollars increased at most. The confidence interval with 95% confidence is from -0.03 to +0.01. Since zero is in this interval, the relationship of an increase of income by 10K is not statistical significant at a 95% confidence interval. 
+
+iii) The lower bound of -0.03 suggest that there could be a possible decrease in price of 0.03 cents for an increase of income in 10K dollars but this would not be practically significant since the decrease in price is so small, only 3 cent decrease, for an increase so large (10 thousand dollars). Even if we gave the estimate for the Income10K coefficient the lower bound of the 95% confidence interval, it would not be practically significant due to the large discrepancy between the tiny decease in price for such a large increase in the income. 
+
+# **Question 2: Summer is Coming**
+
+## *Part A*
+
+### Plot
+
+```{r echo = FALSE, out.width="75%"}
+
+ggplot(data = ercot, aes(x=temp, y = power)) + geom_point(color = "Blue", alpha = 0.15) +
+   geom_smooth(method = 'lm', color = "Black", se = FALSE) +
+    facet_wrap(~weekday) + theme_classic() +
+     labs(title = "Fitted Model of Power vs. Temperature Faceted by Weekday",
+          x = "Temperature (Degree C)",
+          y = "Power (Megawatts)")
+```
+
+
+
+**Caption:** This is a scatter plot showing the relationship between temperature in degrees Celsius and power in Megawatts that is faceted by weekday or weekend and each of the faceted scatter plots has a fitted linear model displayed on each showing the general correlation between the x (explanatory) variable of temperature and the y (reponse) variable of power.
+
+**Takeaway:**Generally, we can see for weekday and weekend that there is a positive correlation between temperature and power from the up slope of the fitted linear model. Both graphs seem to show that as temperature increases, power increases but it seems to be slightly steeper up for the weekday graph. 
+
+
+
+## *Part B*
+
+```{r include = FALSE}
+
+lm3 = lm(power~temp+weekday+temp:weekday, data = ercot)
+get_regression_table(lm3)
+eta_squared(lm3, partial = FALSE)
+rmse(lm3, data = ercot)
+
+
+```
+
+
+1) Adjusting for temperature, with all other variables held constant, power consumption of the weekend is approximately 913 megawatts *LOWER* than on the weekday. We are 95% confident that the difference in power from weekday to weekend is between a decrease of 1490 megawatts (-1490) to a decrease of 336 megawatts(-336) from weekday to weekend. 
+
+2) A increase of temperature by one degree Celsius on a weekday will increase power consumption by approximately 512 megawatts. We are 95% confident that, on weekdays, a one degree C increase in temperature will increase power consumption by at least 502 megawatts and at most 523 megawatts. 
+
+3) The relationship between power and temperature differ from weekday to weekend seem to differ by a decrease in about 2 megawatts (-2) from weekday to weekend on the coefficient (slope) of temperature which ranages from 502 to 523 degrees C at a 95% confidence with an estimate at 512 degrees C.  *We are 95% confidence interval of decrease of the slope of temperature that affects with power (the interaction) is between decrease 22 megawatts(-22) to increase of slope 18 megawatts(18) from weekday to weekend on temperature as it relates to power in the model.*
+
+## *Part C*
+
+The model intercept of this linear model using the model from *Part B* tells us that when it is 0 degrees Celsius on a weekday that the power consumption will be about 361 megawatts. 
+
+## *Part D*
+
+The typical model error we expect from using this model to predict peak power consumption is around 1151 megawatts which is the RMSE or typical error of the model. 
+
+
+# **Question 3: Redlining**
+
+## *Part A*
+
+```{r echo = FALSE}
+
+lm4= lm(Policies ~ Minority +Fire + Age +Income, data = redline)
+standardize_parameters(lm4)
+
+```
+
+
+
+## *Part B*
+
+Of the 4 partial relationships, Minority and Fire are statistically significant because their confidence interval at 95% confidence is [ 0.13, 0.74] and [ 0.06, 0.59] which do not contain zero while the rest of the intervals do contain zero because the scale from [-, +] while Minority and Fire stay [+, +]. Of the four partial relationships, Minority seems to be the most practically significant because the standard coefficient estimate is 0.43 meaning that an increase of one standard deviation of the Minority variable (percentage of minorities) would increase Policy by 0.43 its standard deviation. This is the highest out of the rest of the table and practically shows how the percentage of minorities can have a more substantive effect on the amount of FAIR policies due to how we have standardized the effects of all of the predictors used and Minority has the largest "grasp" over the standard deviation of FAIR policy. 
+
+## *Part C*
+
+A one standard deviation increase in the Minority variable will lead to an estimated 0.43 increase in the standard deviation of Policy with a 95% confidence that this estimate could be in between a
+[ 0.13, 0.74] increase standardized interval of a change in standard deviation of policy for one standard deviation increase of Minority variable. 
+
+## *Part D*
+
+```{r include = FALSE}
+rsquared(lm4)
+
+```
+
+
+0.66 or 66% of the variability in this model of the variable Policy can be explained by Minority, Fire, Age, and Income predictors. This is the R-squared measure of model fit, calculated by running the linear model over rsquared(). 
+
